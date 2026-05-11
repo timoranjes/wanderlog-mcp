@@ -231,5 +231,7 @@ function finalize(candidates: PlaceRefMatch[]): PlaceRefResult {
 }
 
 function normalize(s: string): string {
-  return s.replace(/\s+/g, " ").trim().toLowerCase();
+  // Collapse runs of whitespace and punctuation dashes (hyphens, en/em-dashes)
+  // so "Roppongi Hills - Tokyo City View" matches "Roppongi Hills Tokyo City View".
+  return s.replace(/[\s\-–—]+/g, " ").trim().toLowerCase();
 }

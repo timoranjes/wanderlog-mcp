@@ -66,6 +66,40 @@ describe("extractPlainText", () => {
     );
   });
 
+  it("skips embed ops (non-string inserts)", () => {
+    const block = {
+      id: 1,
+      type: "note" as const,
+      text: {
+        ops: [
+          { insert: "Before " },
+          { insert: { image: "https://example.com/img.jpg" } as unknown as string },
+          { insert: "after\n" },
+        ],
+      },
+    };
+    expect(extractPlainText(block)).toBe("Before after\n");
+  });
+
+  it("handles unicode checkbox characters and brackets", () => {
+    const block = {
+      id: 1,
+      type: "note" as const,
+      text: {
+        ops: [
+          { insert: "☑ Pre-departure checklist\n" },
+          { insert: "[ ] Book Pokemon Cafe Tokyo\n" },
+          { insert: "[ ] opens 31 days ahead, sells out in minutes\n" },
+        ],
+      },
+    };
+    const text = extractPlainText(block);
+    expect(text).toContain("☑");
+    expect(text.toLowerCase()).toContain("pre-departure checklist");
+    expect(text.toLowerCase()).toContain("book pokemon cafe tokyo");
+    expect(text.toLowerCase()).toContain("opens 31 days ahead");
+  });
+
   it("returns empty string for missing text", () => {
     expect(extractPlainText({ id: 1, type: "note" as const })).toBe("");
   });
@@ -141,6 +175,39 @@ describe("findNoteMatches", () => {
     };
     const result = findNoteMatches(trip, "book");
     expect(result).toHaveLength(2);
+  });
+
+  it("finds notes with unicode checkboxes via substring match", () => {
+    const trip: TripPlan = {
+      ...fresh(checklistTrip),
+      itinerary: {
+        sections: [
+          {
+            id: 1,
+            type: "normal",
+            mode: "dayPlan",
+            heading: "",
+            date: "2026-06-01",
+            blocks: [
+              {
+                id: 99,
+                type: "note",
+                text: {
+                  ops: [
+                    { insert: "☑ Pre-departure checklist\n" },
+                    { insert: "[ ] Book Pokemon Cafe Tokyo\n" },
+                    { insert: "[ ] opens 31 days ahead, sells out in minutes\n" },
+                  ],
+                },
+              },
+            ],
+          },
+        ],
+      },
+    };
+    expect(findNoteMatches(trip, "Pre-departure checklist")).toHaveLength(1);
+    expect(findNoteMatches(trip, "Book Pokemon Cafe Tokyo")).toHaveLength(1);
+    expect(findNoteMatches(trip, "opens 31 days ahead, sells out in minutes")).toHaveLength(1);
   });
 
   it("ignores non-note blocks", () => {

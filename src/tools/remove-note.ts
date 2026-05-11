@@ -3,7 +3,7 @@ import type { AppContext } from "../context.js";
 import { WanderlogError, WanderlogNotFoundError } from "../errors.js";
 import type { Json0Op } from "../ot/apply.js";
 import { resolveDay } from "../resolvers/day.js";
-import type { NoteBlock, TripPlan } from "../types.js";
+import type { NoteBlock, QuillDelta, TripPlan } from "../types.js";
 import { findDaySectionByDate, submitOp } from "./shared.js";
 
 export const removeNoteInputSchema = {
@@ -43,9 +43,13 @@ export type NoteMatch = {
   block: NoteBlock;
 };
 
+export function extractDeltaText(delta: QuillDelta | undefined): string {
+  const ops = delta?.ops ?? [];
+  return ops.map((op) => (typeof op.insert === "string" ? op.insert : "")).join("");
+}
+
 export function extractPlainText(block: NoteBlock): string {
-  const ops = block.text?.ops ?? [];
-  return ops.map((op) => op.insert ?? "").join("");
+  return extractDeltaText(block.text);
 }
 
 export function findNoteMatches(trip: TripPlan, query: string, day?: string): NoteMatch[] {

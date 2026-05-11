@@ -71,6 +71,11 @@ import {
   renameDayInputSchema,
 } from "./tools/rename-day.js";
 import {
+  editNote,
+  editNoteDescription,
+  editNoteInputSchema,
+} from "./tools/edit-note.js";
+import {
   removeNote,
   removeNoteDescription,
   removeNoteInputSchema,
@@ -252,6 +257,16 @@ export function buildServer(ctx: AppContext): McpServer {
       inputSchema: removePlaceInputSchema,
     },
     requireAuth(ctx, async (args) => removePlace(ctx, args as Parameters<typeof removePlace>[1])),
+  );
+
+  server.registerTool(
+    "wanderlog_edit_note",
+    {
+      title: "Edit note content in a Wanderlog trip",
+      description: editNoteDescription,
+      inputSchema: editNoteInputSchema,
+    },
+    requireAuth(ctx, async (args) => editNote(ctx, args as Parameters<typeof editNote>[1])),
   );
 
   server.registerTool(
