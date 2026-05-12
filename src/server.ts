@@ -70,6 +70,16 @@ import {
   renameDayDescription,
   renameDayInputSchema,
 } from "./tools/rename-day.js";
+import {
+  editNote,
+  editNoteDescription,
+  editNoteInputSchema,
+} from "./tools/edit-note.js";
+import {
+  removeNote,
+  removeNoteDescription,
+  removeNoteInputSchema,
+} from "./tools/remove-note.js";
 
 const AUTH_ERROR_RESPONSE = {
   content: [
@@ -247,6 +257,26 @@ export function buildServer(ctx: AppContext): McpServer {
       inputSchema: removePlaceInputSchema,
     },
     requireAuth(ctx, async (args) => removePlace(ctx, args as Parameters<typeof removePlace>[1])),
+  );
+
+  server.registerTool(
+    "wanderlog_edit_note",
+    {
+      title: "Edit note content in a Wanderlog trip",
+      description: editNoteDescription,
+      inputSchema: editNoteInputSchema,
+    },
+    requireAuth(ctx, async (args) => editNote(ctx, args as Parameters<typeof editNote>[1])),
+  );
+
+  server.registerTool(
+    "wanderlog_remove_note",
+    {
+      title: "Remove a note from a Wanderlog trip",
+      description: removeNoteDescription,
+      inputSchema: removeNoteInputSchema,
+    },
+    requireAuth(ctx, async (args) => removeNote(ctx, args as Parameters<typeof removeNote>[1])),
   );
 
   server.registerTool(
