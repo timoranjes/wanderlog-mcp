@@ -73,12 +73,25 @@ export async function resolveGeo(
   args: Pick<SearchGuidesArgs, "destination" | "geo_id">,
 ): Promise<{ geo: GuideGeoRef; alternative_geos: GuideGeoRef[] }> {
   if (args.geo_id !== undefined) {
-    const g = await ctx.rest.getGeo(args.geo_id);
+    const good = await loadGoodGuides(ctx);
+    const match = good.find((g) => g.id === args.geo_id);
+    if (!match) {
+      throw new WanderlogError(
+        `Geo ${args.geo_id} not found in guides list`,
+        "geo_not_found",
+        {
+          hint: "Use a destination name or a geo_id from a prior search result.",
+          followUps: [
+            "Retry wanderlog_search_guides with a valid destination name.",
+          ],
+        },
+      );
+    }
     return {
       geo: {
-        geo_id: g.id,
-        name: g.name,
-        country: g.countryName ?? null,
+        geo_id: match.id,
+        name: match.name,
+        country: match.countryName ?? null,
         subcategory: null,
       },
       alternative_geos: [],

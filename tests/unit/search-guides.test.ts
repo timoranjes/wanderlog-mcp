@@ -13,9 +13,7 @@ function fakeCtx(overrides: Partial<AppContext["rest"]> = {}): AppContext {
   return {
     rest: {
       geoAutocomplete: async () => [],
-      getGeo: async () => {
-        throw new Error("getGeo not stubbed");
-      },
+      listGoodGuides: async () => [],
       ...overrides,
     },
   } as unknown as AppContext;
@@ -42,14 +40,12 @@ describe("search-guides resolveGeo", () => {
     });
   });
 
-  it("uses getGeo for explicit geo_id and returns no alternatives", async () => {
+  it("looks up geo_id in listGoodGuides and returns no alternatives", async () => {
+    __resetCacheForTests();
     const ctx = fakeCtx({
-      getGeo: async (id: number) => ({
-        id,
-        name: "Vietnam",
-        countryName: null,
-        bounds: [1, 2, 3, 4] as [number, number, number, number],
-      }),
+      listGoodGuides: async () => [
+        { id: 86655, name: "Vietnam", countryName: null, popularity: 100, subcategory: "country" },
+      ],
     });
     const result = await resolveGeo(ctx, { geo_id: 86655 });
     expect(result.geo.geo_id).toBe(86655);
@@ -166,7 +162,6 @@ function handlerCtx(
   return {
     rest: {
       geoAutocomplete: async () => [],
-      getGeo: async () => ({ id: 0, name: "" }),
       listGoodGuides: async () => [] as GeoWithGoodGuides[],
       getGuidesForGeo: async (): Promise<GuidesForGeoResponse> => ({
         geo: { id: 0, name: "" } as GeoWithGoodGuides,
@@ -268,7 +263,6 @@ describe("searchGuides (handler)", () => {
       likeCount: 9,
     };
     const ctx = handlerCtx({
-      getGeo: async (id) => ({ id, name: "Vietnam" }),
       listGoodGuides: async () => goodGuides,
       getGuidesForGeo: async () => ({ geo: goodGuides[0]!, guides: [guide] }),
     });
