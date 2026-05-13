@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { AppContext } from "../context.js";
+import type { GuideGeoRef } from "../types.js";
 import {
   WanderlogError,
   WanderlogValidationError,
@@ -60,6 +61,56 @@ export function validateArgs(args: SearchGuidesArgs): SearchGuidesArgs & {
     );
   }
   return { ...args, response_format: args.response_format ?? "concise" };
+}
+
+export async function resolveGeo(
+  ctx: AppContext,
+  args: Pick<SearchGuidesArgs, "destination" | "geo_id">,
+): Promise<{ geo: GuideGeoRef; alternative_geos: GuideGeoRef[] }> {
+  if (args.geo_id !== undefined) {
+    const g = await ctx.rest.getGeo(args.geo_id);
+    return {
+      geo: {
+        geo_id: g.id,
+        name: g.name,
+        country: g.countryName ?? null,
+        subcategory: null,
+      },
+      alternative_geos: [],
+    };
+  }
+  const candidates = await ctx.rest.geoAutocomplete(args.destination!);
+  if (candidates.length === 0) {
+    throw new WanderlogError(
+      `No geo found matching "${args.destination}"`,
+      "destination_not_found",
+      {
+        hint: "Try a more specific name (include the country) or pass an explicit geo_id from a prior search.",
+        followUps: [
+          "Retry wanderlog_search_guides with a more specific destination (include the country or region).",
+        ],
+      },
+    );
+  }
+  const ranked = [...candidates].sort(
+    (a, b) => (b.popularity ?? 0) - (a.popularity ?? 0),
+  );
+  const top = ranked[0]!;
+  const alternatives = ranked.slice(1, 3).map((c) => ({
+    geo_id: c.id,
+    name: c.name,
+    country: c.countryName ?? null,
+    subcategory: null,
+  }));
+  return {
+    geo: {
+      geo_id: top.id,
+      name: top.name,
+      country: top.countryName ?? null,
+      subcategory: null,
+    },
+    alternative_geos: alternatives,
+  };
 }
 
 export async function searchGuides(
