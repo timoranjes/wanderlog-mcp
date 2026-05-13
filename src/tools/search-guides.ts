@@ -174,8 +174,45 @@ export function geoRef(g: GeoWithGoodGuides): GuideGeoRef {
 }
 
 export async function searchGuides(
-  _ctx: AppContext,
-  _args: SearchGuidesArgs,
+  ctx: AppContext,
+  args: SearchGuidesArgs,
 ): Promise<{ content: Array<{ type: "text"; text: string }>; isError?: boolean }> {
-  throw new WanderlogError("Not implemented", "not_implemented");
+  try {
+    const norm = validateArgs(args);
+    const { geo: resolved, alternative_geos } = await resolveGeo(ctx, norm);
+    const good = await loadGoodGuides(ctx);
+    const match = good.find((g) => g.id === resolved.geo_id);
+
+    if (!match) {
+      const top5 = [...good]
+        .sort((a, b) => (b.popularity ?? 0) - (a.popularity ?? 0))
+        .slice(0, 5)
+        .map(geoRef);
+      const body = {
+        kind: "no_guides" as const,
+        resolved_geo: resolved,
+        alternative_geos_with_guides: top5,
+      };
+      return { content: [{ type: "text", text: JSON.stringify(body, null, 2) }] };
+    }
+
+    const { guides } = await ctx.rest.getGuidesForGeo(match.id);
+    const projected = guides.map((g) => projectGuide(g, norm.response_format));
+
+    const body = {
+      kind: "guides" as const,
+      geo: geoRef(match),
+      alternative_geos,
+      returned: projected.length,
+      total: projected.length,
+      guides: projected,
+    };
+    return { content: [{ type: "text", text: JSON.stringify(body, null, 2) }] };
+  } catch (err) {
+    const e =
+      err instanceof WanderlogError
+        ? err.toUserMessage()
+        : `Unexpected error: ${(err as Error).message}`;
+    return { content: [{ type: "text", text: e }], isError: true };
+  }
 }
