@@ -302,8 +302,6 @@ export type GuideSummary = {
   blurb: string | null;
   url: string;
   edited_at: string | null;
-  start_date: string | null;
-  end_date: string | null;
   author_name?: string;
   profile_picture_url?: string | null;
   distinction?: string | null;

@@ -158,8 +158,6 @@ export function projectGuide(
     blurb: g.authorBlurb ?? null,
     url: `https://wanderlog.com/view/${g.key}`,
     edited_at: g.editedAt ?? null,
-    start_date: g.startDate ?? null,
-    end_date: g.endDate ?? null,
   };
   if (format === "concise") return base;
   return {

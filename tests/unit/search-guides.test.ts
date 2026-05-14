@@ -113,7 +113,7 @@ describe("projectGuide", () => {
     headerImageKey: "yitfaNaah1Cxyrnht6TDK7dxn2U1EtMW",
   };
 
-  it("concise projection keeps essentials, blurb, like_count, url, and dates", () => {
+  it("concise projection keeps essentials, blurb, like_count, url, and edited_at", () => {
     const p = projectGuide(raw, "concise");
     expect(p.guide_key).toBe("nlcviusycz");
     expect(p.title).toBe("Japan: Video Game Guide");
@@ -124,8 +124,6 @@ describe("projectGuide", () => {
     expect(p.blurb).toBe("I love Japan.");
     expect(p.url).toBe("https://wanderlog.com/view/nlcviusycz");
     expect(p.edited_at).toBe("2026-05-03T02:05:37+00:00");
-    expect(p.start_date).toBeNull();
-    expect(p.end_date).toBeNull();
     // 'detailed' fields stay undefined in concise mode:
     expect(p.author_name).toBeUndefined();
     expect(p.profile_picture_url).toBeUndefined();
@@ -145,22 +143,6 @@ describe("projectGuide", () => {
     expect(p.distinction).toBe("verified");
     expect(p.profile_picture_url).toMatch(/Vlp9auuKUEkRrlRR/);
     expect(p.header_image_url).toMatch(/yitfaNaah1Cxyrnht6TDK7dxn2U1EtMW/);
-  });
-
-  it("surfaces start_date and end_date when guide has a travel-date range", () => {
-    const itinerary: WanderlogGuide = {
-      id: 99,
-      keyType: "view",
-      key: "xyz",
-      type: "recommendations",
-      title: "Two weeks in Japan",
-      user: { id: 1, username: "u", name: "U" },
-      startDate: "2024-04-01",
-      endDate: "2024-04-14",
-    };
-    const p = projectGuide(itinerary, "concise");
-    expect(p.start_date).toBe("2024-04-01");
-    expect(p.end_date).toBe("2024-04-14");
   });
 
   it("nulls and missing fields stay null/undefined gracefully", () => {
@@ -341,8 +323,6 @@ describe("searchGuides (handler)", () => {
     expect(body.guides[0].url).toBe("https://wanderlog.com/view/abc");
     // edited_at is now in concise; without a wire value it's null:
     expect(body.guides[0].edited_at).toBeNull();
-    expect(body.guides[0].start_date).toBeNull();
-    expect(body.guides[0].end_date).toBeNull();
     // Detailed-only fields remain undefined:
     expect(body.guides[0].author_name).toBeUndefined();
     expect(body.guides[0].distinction).toBeUndefined();
