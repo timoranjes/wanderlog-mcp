@@ -301,9 +301,11 @@ export type GuideSummary = {
   like_count: number | null;
   blurb: string | null;
   url: string;
+  edited_at: string | null;
+  start_date: string | null;
+  end_date: string | null;
   author_name?: string;
   profile_picture_url?: string | null;
-  edited_at?: string | null;
   distinction?: string | null;
   header_image_url?: string | null;
 };

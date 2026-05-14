@@ -157,13 +157,15 @@ export function projectGuide(
     like_count: g.likeCount ?? null,
     blurb: g.authorBlurb ?? null,
     url: `https://wanderlog.com/view/${g.key}`,
+    edited_at: g.editedAt ?? null,
+    start_date: g.startDate ?? null,
+    end_date: g.endDate ?? null,
   };
   if (format === "concise") return base;
   return {
     ...base,
     author_name: g.user.name,
     profile_picture_url: imageUrl(g.user.profilePictureKey),
-    edited_at: g.editedAt ?? null,
     distinction: g.distinction ?? null,
     header_image_url: imageUrl(g.headerImageKey),
   };
