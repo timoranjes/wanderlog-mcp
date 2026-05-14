@@ -4,10 +4,12 @@ import type {
   GeoWithGoodGuides,
   GuideGeoRef,
   GuideSummary,
+  GuidesForGeoResponse,
   WanderlogGuide,
 } from "../types.js";
 import {
   WanderlogError,
+  WanderlogNotFoundError,
   WanderlogValidationError,
 } from "../errors.js";
 
@@ -73,25 +75,14 @@ export async function resolveGeo(
   args: Pick<SearchGuidesArgs, "destination" | "geo_id">,
 ): Promise<{ geo: GuideGeoRef; alternative_geos: GuideGeoRef[] }> {
   if (args.geo_id !== undefined) {
-    const good = await loadGoodGuides(ctx);
-    const match = good.find((g) => g.id === args.geo_id);
-    if (!match) {
-      throw new WanderlogError(
-        "The provided geo_id is not in the curated guides list",
-        "geo_not_found",
-        {
-          hint: "Use a destination name, or pass a geo_id from a prior wanderlog_search_guides response's 'alternative_geos_with_guides'.",
-          followUps: [
-            "Retry wanderlog_search_guides with a destination name (e.g. 'Vietnam', 'Kyoto').",
-          ],
-        },
-      );
-    }
+    // Trust the caller's geo_id. The canonical name/country/subcategory will
+    // be filled in by getGuidesForGeo's embedded geo (or left as a stub if
+    // the geo has no guides at all).
     return {
       geo: {
-        geo_id: match.id,
-        name: match.name,
-        country: match.countryName ?? null,
+        geo_id: args.geo_id,
+        name: "",
+        country: null,
         subcategory: null,
       },
       alternative_geos: [],
@@ -192,29 +183,36 @@ export async function searchGuides(
 ): Promise<{ content: Array<{ type: "text"; text: string }>; isError?: boolean }> {
   try {
     const norm = validateArgs(args);
-    const { geo: resolved, alternative_geos } = await resolveGeo(ctx, norm);
-    const good = await loadGoodGuides(ctx);
-    const match = good.find((g) => g.id === resolved.geo_id);
+    const { geo: stub, alternative_geos } = await resolveGeo(ctx, norm);
 
-    if (!match) {
+    let guidesResp: GuidesForGeoResponse | null = null;
+    try {
+      guidesResp = await ctx.rest.getGuidesForGeo(stub.geo_id);
+    } catch (err) {
+      if (!(err instanceof WanderlogNotFoundError)) throw err;
+    }
+
+    if (!guidesResp || guidesResp.guides.length === 0) {
+      const good = await loadGoodGuides(ctx);
       const top5 = [...good]
         .sort((a, b) => (b.popularity ?? 0) - (a.popularity ?? 0))
         .slice(0, 5)
         .map(geoRef);
+      const resolved_geo: GuideGeoRef = guidesResp?.geo ? geoRef(guidesResp.geo) : stub;
       const body = {
         kind: "no_guides" as const,
-        resolved_geo: resolved,
+        resolved_geo,
         alternative_geos_with_guides: top5,
       };
       return { content: [{ type: "text", text: JSON.stringify(body, null, 2) }] };
     }
 
-    const { guides } = await ctx.rest.getGuidesForGeo(match.id);
-    const projected = guides.map((g) => projectGuide(g, norm.response_format));
-
+    const projected = guidesResp.guides.map((g) =>
+      projectGuide(g, norm.response_format),
+    );
     const body = {
       kind: "guides" as const,
-      geo: geoRef(match),
+      geo: geoRef(guidesResp.geo),
       alternative_geos,
       returned: projected.length,
       total: projected.length,

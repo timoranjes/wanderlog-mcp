@@ -40,16 +40,11 @@ describe("search-guides resolveGeo", () => {
     });
   });
 
-  it("looks up geo_id in listGoodGuides and returns no alternatives", async () => {
-    __resetCacheForTests();
-    const ctx = fakeCtx({
-      listGoodGuides: async () => [
-        { id: 86655, name: "Vietnam", countryName: null, popularity: 100, subcategory: "country" },
-      ],
-    });
+  it("returns stub geo for explicit geo_id (handler fills in canonical name from getGuidesForGeo)", async () => {
+    const ctx = fakeCtx({});
     const result = await resolveGeo(ctx, { geo_id: 86655 });
     expect(result.geo.geo_id).toBe(86655);
-    expect(result.geo.name).toBe("Vietnam");
+    expect(result.geo.name).toBe("");
     expect(result.alternative_geos).toEqual([]);
   });
 });
@@ -221,7 +216,7 @@ describe("searchGuides (handler)", () => {
     expect(body.guides[0].title).toBe("Vietnam Loop");
   });
 
-  it("returns kind=no_guides with up-to-5 alternatives when geo is not curated", async () => {
+  it("returns kind=no_guides with up-to-5 alternatives when getGuidesForGeo returns no guides", async () => {
     __resetCacheForTests();
     const goodGuides: GeoWithGoodGuides[] = [
       { id: 86647, name: "Japan", subcategory: "country", popularity: 0 },
@@ -236,6 +231,10 @@ describe("searchGuides (handler)", () => {
         { id: 9999, name: "Smalltown", countryName: "X", popularity: 10, latitude: 0, longitude: 0 },
       ],
       listGoodGuides: async () => goodGuides,
+      // Simulate Wanderlog returning no guides for this geo: 404 → throw.
+      getGuidesForGeo: async () => {
+        throw new (await import("../../src/errors.ts")).WanderlogNotFoundError("Guides", "9999");
+      },
     });
     const res = await searchGuides(ctx, { destination: "Smalltown" });
     expect(res.isError).toBeUndefined();
@@ -245,6 +244,46 @@ describe("searchGuides (handler)", () => {
     expect(body.alternative_geos_with_guides).toHaveLength(5);
     // Highest popularity first:
     expect(body.alternative_geos_with_guides[0].name).toBe("New York City");
+  });
+
+  it("returns kind=guides for a destination that is NOT in the curated list but DOES have user guides (Bangkok case)", async () => {
+    __resetCacheForTests();
+    const goodGuides: GeoWithGoodGuides[] = [
+      { id: 86647, name: "Japan", subcategory: "country", popularity: 0 },
+    ];
+    const bangkokGeo: GeoWithGoodGuides = {
+      id: 4,
+      name: "Bangkok",
+      countryName: "Thailand",
+      subcategory: "city",
+      popularity: 347007,
+    };
+    const guide: WanderlogGuide = {
+      id: 163218,
+      keyType: "view",
+      key: "vyxcbmqruh",
+      type: "recommendations",
+      title: "Bangkok, Thailand Guide",
+      user: { id: 87618, username: "sams", name: "Sam's Thailand Travels" },
+      placeCount: 77,
+      viewCount: 20320,
+    };
+    const ctx = handlerCtx({
+      geoAutocomplete: async () => [
+        { id: 4, name: "Bangkok", countryName: "Thailand", popularity: 347007, latitude: 0, longitude: 0 },
+      ],
+      listGoodGuides: async () => goodGuides,
+      getGuidesForGeo: async () => ({ geo: bangkokGeo, guides: [guide] }),
+    });
+    const res = await searchGuides(ctx, { destination: "Bangkok" });
+    expect(res.isError).toBeUndefined();
+    const body = JSON.parse(res.content[0]!.text);
+    expect(body.kind).toBe("guides");
+    expect(body.geo.geo_id).toBe(4);
+    expect(body.geo.name).toBe("Bangkok");
+    expect(body.geo.country).toBe("Thailand");
+    expect(body.geo.subcategory).toBe("city");
+    expect(body.guides[0].guide_key).toBe("vyxcbmqruh");
   });
 
   it("concise format omits blurb/like_count/etc on each guide", async () => {
