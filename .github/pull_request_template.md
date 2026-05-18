@@ -1,10 +1,18 @@
 ## Summary
 
-<!-- What does this PR change, and why? 2-3 sentences. -->
+<!-- What changes, and why? 2-3 sentences in your own words.
+     If an agent drafted this, edit it before requesting review. -->
 
 ## Test plan
 
-<!-- How did you verify the change? Commands you ran, manual checks, edge cases covered. -->
+<!-- How did you verify this? Commands run, edge cases, what you
+     manually checked beyond CI. "CI is green" is not a test plan. -->
 
-- [ ] `npm run build && npm run test` passes
-- [ ] `npm run test:integration` passes (if touching `src/transport/**` or `src/tools/**`)
+## Agent-facing surface changes
+
+<!-- Tick only if applicable; delete the section otherwise. -->
+
+- [ ] Changed a tool description, parameter doc, or error message
+      (these are prompts shipped to other agents — review for
+      injection risk and clarity)
+- [ ] Changed or relaxed an invariant in `docs/architecture.md`
