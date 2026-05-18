@@ -8,4 +8,3 @@
 
 - [ ] `npm run build && npm run test` passes
 - [ ] `npm run test:integration` passes (if touching `src/transport/**` or `src/tools/**`)
-- [ ] `docs/kanban.md` updated if this completes or adds a task
