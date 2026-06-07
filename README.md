@@ -15,9 +15,13 @@ The agent calls the tools, interleaves places and notes for each day, adds hotel
 
 **See a real example:** [14-day Japan Golden Route](https://wanderlog.com/view/dmvegdhqsa/japan-golden-route--tokyo--hakone--kyoto--nara--osaka) — built entirely by an AI agent using this MCP server.
 
-## What's New (Unreleased)
+## What's New in v0.3.0
 
 - `wanderlog_search_guides` + `wanderlog_get_guide` — discover and read user-written Wanderlog travel guides. The LLM can ask "what guides exist for Vietnam?" and pull full itineraries to use as inspiration.
+- `wanderlog_remove_note` — remove standalone note blocks by natural-language reference.
+- `wanderlog_edit_note` — find-and-replace across note blocks, place annotations, and checklist titles/items.
+- Detailed mode no longer truncates place notes or note blocks — guides and itineraries render their full commentary.
+- Fixes: notes containing embeds no longer render as `[object Object]`; place references now match across hyphen/dash differences (e.g. `"Roppongi Hills - Tokyo City View"`).
 
 ## What's New in v0.2.0
 
@@ -78,6 +82,8 @@ and a ryokan in Shinjuku."
 | `wanderlog_create_trip` | Create a new trip with destination + date range |
 | `wanderlog_add_place` | Add a place to a specific day or general list |
 | `wanderlog_add_note` | Add a note (transit tips, booking info, local advice) |
+| `wanderlog_edit_note` | Find-and-replace text in notes, place annotations, and checklists |
+| `wanderlog_remove_note` | Remove a standalone note block by natural-language reference |
 | `wanderlog_add_hotel` | Add a hotel booking with check-in/check-out dates |
 | `wanderlog_add_checklist` | Add a pre-trip or per-day checklist |
 | `wanderlog_add_expense` | Log a budget expense (amount, category, currency) linked to a place |
