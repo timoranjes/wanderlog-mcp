@@ -15,6 +15,12 @@ The agent calls the tools, interleaves places and notes for each day, adds hotel
 
 **See a real example:** [14-day Japan Golden Route](https://wanderlog.com/view/dmvegdhqsa/japan-golden-route--tokyo--hakone--kyoto--nara--osaka) — built entirely by an AI agent using this MCP server.
 
+## What's New in v0.3.1
+
+- Wanderlog rate-limits rapid edits — burst mutations (an LLM building a full itinerary) now retry automatically with backoff instead of failing with an opaque "Submit op timeout".
+- Rate-limit rejections that can't be retried surface as a clear error instead of a 10-second hang.
+- New day sections created by `wanderlog_update_trip_dates` now match Wanderlog's native section shape exactly.
+
 ## What's New in v0.3.0
 
 - `wanderlog_search_guides` + `wanderlog_get_guide` — discover and read user-written Wanderlog travel guides. The LLM can ask "what guides exist for Vietnam?" and pull full itineraries to use as inspiration.
