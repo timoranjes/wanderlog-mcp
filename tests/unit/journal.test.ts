@@ -162,6 +162,19 @@ describe("addJournal", () => {
     expect(op.li.text).toEqual({ ops: [{ insert: "Cherry blossoms by the lake." }] });
   });
 
+  it("defaults the date to the place's itinerary day when reused", async () => {
+    const { ctx, submittedOps } = makeFakeContext(journalTrip, noSearch);
+    const res = await addJournal(ctx, {
+      trip_key: "journaltripkey",
+      place: "Tocho", // "Tōchō-ji Temple", scheduled on 2026-05-29
+      text: "A quiet temple.",
+    });
+    expect(res.isError).toBeUndefined();
+    const op = submittedOps[0]![0] as { li: { dateTime: string; place: { place_id: string } } };
+    expect(op.li.dateTime).toBe("2026-05-29T09:00+09:00"); // the day it's planned on
+    expect(op.li.place.place_id).toBe("ChIJtochoji");
+  });
+
   it("reuses a place from an existing journal stop", async () => {
     const { ctx, submittedOps } = makeFakeContext(journalTrip, noSearch);
     const res = await addJournal(ctx, { trip_key: "journaltripkey", place: "ganso" });

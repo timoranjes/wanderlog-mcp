@@ -4,7 +4,7 @@ import { WanderlogError } from "../errors.js";
 import type { Json0Op } from "../ot/apply.js";
 import type { JournalStop, PlaceData } from "../types.js";
 import { findTripCenter, generateBlockId, submitOp } from "./shared.js";
-import { findTripPlaces, getJournalStops } from "./journal-shared.js";
+import { findTripPlaces, getJournalStops, placeItineraryDate } from "./journal-shared.js";
 
 export const addJournalInputSchema = {
   trip_key: z.string().min(1).describe("The trip to add the journal stop to."),
@@ -148,7 +148,9 @@ export async function addJournal(
     }
 
     const stops = getJournalStops(trip).map((m) => m.stop);
-    const date = args.date ?? new Date().toISOString().slice(0, 10);
+    // Default to the day this place is scheduled on in the itinerary, else today.
+    const date =
+      args.date ?? placeItineraryDate(trip, place) ?? new Date().toISOString().slice(0, 10);
     const time = args.time ?? "09:00";
     const dateTime = `${date}T${time}${existingStopOffset(stops)}`;
 

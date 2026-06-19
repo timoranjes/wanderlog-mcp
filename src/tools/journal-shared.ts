@@ -79,6 +79,22 @@ export function findTripPlaces(trip: TripPlan, query: string): PlaceData[] {
   return [...byKey.values()].filter((p) => fold(p.name).includes(q));
 }
 
+/**
+ * The date of the itinerary day that schedules this place, if any — so a
+ * journal stop for a planned place defaults to the day it's planned on rather
+ * than today. Matches by place_id across dayPlan sections; returns undefined
+ * for unscheduled places (or places only present in the journal).
+ */
+export function placeItineraryDate(trip: TripPlan, place: PlaceData): string | undefined {
+  for (const section of trip.itinerary.sections) {
+    if (section.mode !== "dayPlan" || !section.date) continue;
+    for (const block of section.blocks) {
+      if (isPlaceBlock(block) && block.place.place_id === place.place_id) return section.date;
+    }
+  }
+  return undefined;
+}
+
 function preview(text: string): string {
   const flat = text.replace(/\n/g, " ").trim();
   return flat.length > 60 ? `${flat.slice(0, 57)}…` : flat;

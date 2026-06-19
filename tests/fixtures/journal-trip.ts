@@ -35,6 +35,20 @@ export const journalTrip: TripPlan = {
           },
         ],
       },
+      {
+        id: 200,
+        type: "normal",
+        mode: "dayPlan",
+        heading: "",
+        date: "2026-05-29",
+        blocks: [
+          {
+            id: 40002,
+            type: "place",
+            place: { name: "Tōchō-ji Temple", place_id: "ChIJtochoji" },
+          },
+        ],
+      },
     ],
     journal: {
       summary: "Three days of food in Fukuoka.",
