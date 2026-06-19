@@ -184,6 +184,18 @@ Example add_place call with all features:
     start_time: "08:30", end_time: "10:00")
 
 Places without notes and times are just pins on a map. Rich places make an itinerary useful.
+
+JOURNALING (a trip's travelogue of places the user actually visited):
+  wanderlog_list_journal / add_journal / edit_journal / remove_journal manage the journal.
+  A journal stop is a place + date/time + a text entry (the user's notes about visiting it).
+  - wanderlog_add_journal first REUSES a place already in the trip (an itinerary place or an
+    existing journal stop) and dates the new stop to the day that place is scheduled on.
+  - If the place is NOT in the trip yet, add_journal does NOT add it silently — it returns a
+    prompt. ASK the user whether to add it to their itinerary first (wanderlog_add_place, on the
+    right day) or to journal it as a new place with allow_new_place: true. Don't pass
+    allow_new_place on the user's behalf without asking.
+  - Select a stop to edit/remove by a substring of its title (matching ignores case and accents).
+    wanderlog_edit_journal can also set the trip-level journal summary via new_summary.
 `.trim();
 
 export function buildServer(ctx: AppContext): McpServer {
