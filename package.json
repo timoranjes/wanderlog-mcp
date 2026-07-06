@@ -45,17 +45,17 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
-    "ws": "^8.18.0",
+    "ws": "^8.21.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@anthropic-ai/sdk": "^0.40.0",
+    "@anthropic-ai/sdk": "^0.110.0",
     "@eslint/js": "^10.0.1",
     "@types/node": "^22.10.2",
     "@types/ws": "^8.5.13",
     "eslint": "^10.5.0",
     "globals": "^17.7.0",
-    "tsx": "^4.19.2",
+    "tsx": "^4.23.0",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.62.0",
     "vitest": "^4.1.10"
