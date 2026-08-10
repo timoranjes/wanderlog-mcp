@@ -5,6 +5,21 @@ import { resolveDay } from "../resolvers/day.js";
 import type { Block, ChecklistItem, Geo, PlaceData, Section, TripPlan } from "../types.js";
 import { isPlaceBlock } from "../types.js";
 
+// In-memory undo stack per trip (keyed by trip_key)
+const undoStacks = new Map<string, { ops: Json0Op[] }[]>();
+
+export function getUndoStack(tripKey: string): { ops: Json0Op[] }[] {
+  if (!undoStacks.has(tripKey)) undoStacks.set(tripKey, []);
+  return undoStacks.get(tripKey)!;
+}
+
+export function recordUndoPoint(tripKey: string, ops: Json0Op[]): void {
+  const stack = getUndoStack(tripKey);
+  stack.push({ ops });
+  // Keep max 20 entries
+  while (stack.length > 20) stack.shift();
+}
+
 /**
  * Per-trip mutex — serializes submits against the same trip so concurrent
  * callers can't race each other on the ShareDB version vector. Without this,
@@ -58,6 +73,7 @@ export async function submitOp(
     try {
       await submitWithRateLimitRetry(client, ops);
       ctx.tripCache.applyLocalOp(tripKey, ops, client.version);
+      recordUndoPoint(tripKey, ops);
     } catch (err) {
       // Any submit failure leaves our cached view possibly inconsistent with
       // the server. Invalidate so the next get() refetches + resubscribes.

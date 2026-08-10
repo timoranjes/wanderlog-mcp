@@ -1,6 +1,36 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { AppContext } from "./context.js";
 import {
+  replacePlaceNote,
+  replacePlaceNoteDescription,
+  replacePlaceNoteInputSchema,
+} from "./tools/replace-place-note.js";
+import {
+  reorderDay,
+  reorderDayDescription,
+  reorderDayInputSchema,
+} from "./tools/reorder-day.js";
+import {
+  batchAddPlaces,
+  batchAddPlacesDescription,
+  batchAddPlacesInputSchema,
+} from "./tools/batch-add-places.js";
+import {
+  removeDuplicatePlaces,
+  removeDuplicatePlacesDescription,
+  removeDuplicatePlacesInputSchema,
+} from "./tools/remove-duplicate-places.js";
+import {
+  movePlace,
+  movePlaceDescription,
+  movePlaceInputSchema,
+} from "./tools/move-place.js";
+import {
+  undo,
+  undoDescription,
+  undoInputSchema,
+} from "./tools/undo.js";
+import {
   addChecklist,
   addChecklistDescription,
   addChecklistInputSchema,
@@ -353,6 +383,72 @@ export function buildServer(ctx: AppContext): McpServer {
       inputSchema: addNoteInputSchema,
     },
     requireAuth(ctx, async (args) => addNote(ctx, args as Parameters<typeof addNote>[1])),
+  );
+
+  server.registerTool(
+    "wanderlog_replace_place_note",
+    {
+      title: "Replace a place's inline note entirely",
+      description: replacePlaceNoteDescription,
+      inputSchema: replacePlaceNoteInputSchema,
+    },
+    requireAuth(ctx, async (args) =>
+      replacePlaceNote(ctx, args as Parameters<typeof replacePlaceNote>[1])),
+  );
+
+  server.registerTool(
+    "wanderlog_reorder_day",
+    {
+      title: "Reorder blocks within a day by time",
+      description: reorderDayDescription,
+      inputSchema: reorderDayInputSchema,
+    },
+    requireAuth(ctx, async (args) =>
+      reorderDay(ctx, args as Parameters<typeof reorderDay>[1])),
+  );
+
+  server.registerTool(
+    "wanderlog_batch_add_places",
+    {
+      title: "Add multiple places to a Wanderlog trip in one call",
+      description: batchAddPlacesDescription,
+      inputSchema: batchAddPlacesInputSchema,
+    },
+    requireAuth(ctx, async (args) =>
+      batchAddPlaces(ctx, args as Parameters<typeof batchAddPlaces>[1])),
+  );
+
+  server.registerTool(
+    "wanderlog_remove_duplicate_places",
+    {
+      title: "Detect and remove duplicate places",
+      description: removeDuplicatePlacesDescription,
+      inputSchema: removeDuplicatePlacesInputSchema,
+    },
+    requireAuth(ctx, async (args) =>
+      removeDuplicatePlaces(ctx, args as Parameters<typeof removeDuplicatePlaces>[1])),
+  );
+
+  server.registerTool(
+    "wanderlog_move_place",
+    {
+      title: "Move a place to a different day",
+      description: movePlaceDescription,
+      inputSchema: movePlaceInputSchema,
+    },
+    requireAuth(ctx, async (args) =>
+      movePlace(ctx, args as Parameters<typeof movePlace>[1])),
+  );
+
+  server.registerTool(
+    "wanderlog_undo",
+    {
+      title: "Undo the last mutation",
+      description: undoDescription,
+      inputSchema: undoInputSchema,
+    },
+    requireAuth(ctx, async (args) =>
+      undo(ctx, args as Parameters<typeof undo>[1])),
   );
 
   server.registerTool(
