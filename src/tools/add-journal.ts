@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { randomUUID } from "node:crypto";
 import type { AppContext } from "../context.js";
 import { WanderlogError } from "../errors.js";
 import type { Json0Op } from "../ot/apply.js";
@@ -127,7 +128,7 @@ export async function addJournal(
       }
       const predictions = await ctx.rest.searchPlacesAutocomplete({
         input: args.place,
-        sessionToken: crypto.randomUUID(),
+        sessionToken: randomUUID(),
         location: { latitude: center.lat, longitude: center.lng },
         radius: 15000,
       });

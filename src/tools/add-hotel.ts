@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { randomUUID } from "node:crypto";
 import type { AppContext } from "../context.js";
 import { WanderlogError, WanderlogValidationError } from "../errors.js";
 import type { Json0Op } from "../ot/apply.js";
@@ -68,7 +69,7 @@ export async function addHotel(
 
     const predictions = await ctx.rest.searchPlacesAutocomplete({
       input: args.hotel,
-      sessionToken: crypto.randomUUID(),
+      sessionToken: randomUUID(),
       location: { latitude: center.lat, longitude: center.lng },
       radius: 15000,
     });
