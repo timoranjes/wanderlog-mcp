@@ -31,6 +31,11 @@ import {
   undoInputSchema,
 } from "./tools/undo.js";
 import {
+  addLinkNote,
+  addLinkNoteDescription,
+  addLinkNoteInputSchema,
+} from "./tools/add-link-note.js";
+import {
   addChecklist,
   addChecklistDescription,
   addChecklistInputSchema,
@@ -449,6 +454,17 @@ export function buildServer(ctx: AppContext): McpServer {
     },
     requireAuth(ctx, async (args) =>
       undo(ctx, args as Parameters<typeof undo>[1])),
+  );
+
+  server.registerTool(
+    "wanderlog_add_link_note",
+    {
+      title: "Add a note with a clickable link",
+      description: addLinkNoteDescription,
+      inputSchema: addLinkNoteInputSchema,
+    },
+    requireAuth(ctx, async (args) =>
+      addLinkNote(ctx, args as Parameters<typeof addLinkNote>[1])),
   );
 
   server.registerTool(
