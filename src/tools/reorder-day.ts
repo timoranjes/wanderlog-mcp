@@ -136,7 +136,9 @@ export async function reorderDay(
     // Convert desired order into JSON0 lm moves.
     // Strategy: repeatedly move the block that should be at position i up to position i.
     // We work on a mutable copy of the array indices.
-    const current = desiredOrder.map((x) => x); // current block offsets, in display order
+    // current = the current display order (indices in their current positions).
+    // Initially this is [0, 1, 2, ..., n-1] since no moves have been applied yet.
+    const current = blocks.map((_, i) => i); // current block offsets, in display order
     const ops: Json0Op[] = [];
 
     for (let target = 0; target < current.length; target++) {
