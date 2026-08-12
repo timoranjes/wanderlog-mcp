@@ -128,7 +128,7 @@ export class ShareDBClient extends EventEmitter {
       const handshakeTimeout = setTimeout(() => {
         reject(new WanderlogError("ShareDB handshake timeout", "ws_timeout"));
         ws.close();
-      }, 10_000);
+      }, 30_000);
 
       ws.on("open", () => {
         this.send({ a: "hs", id: null, protocol: 1, protocolMinor: 2 });
@@ -304,7 +304,24 @@ export class ShareDBClient extends EventEmitter {
         .then(() => {
           this.reconnectAttempts = 0;
           if (resubscribe) {
-            void this.subscribe().then(() => this.emit("reconnected"));
+            // Must catch: subscribe() rejects on timeout/auth, and an
+            // unhandled rejection here crashes the whole server process
+            // (Node >=15 default). The rejection propagates to whichever
+            // caller is awaiting the resubscribe; if nobody is, log and
+            // move on — the next explicit subscribe() will retry.
+            void this.subscribe()
+              .then(() => this.emit("reconnected"))
+              .catch((err) => {
+                if (err instanceof WanderlogAuthError) {
+                  console.error(
+                    `[wanderdog] Reconnect subscribe failed: auth expired.`,
+                  );
+                  return;
+                }
+                console.warn(
+                  `[wanderdog] Reconnect subscribe failed: ${(err as Error).message}`,
+                );
+              });
           } else {
             this.emit("reconnected");
           }
@@ -343,9 +360,22 @@ export class ShareDBClient extends EventEmitter {
       setTimeout(() => {
         if (this.subscribePending) {
           this.subscribePending = undefined;
+          // The TCP socket may still report ESTABLISHED while the peer has
+          // silently stopped responding (idle drain, edge LB, half-open
+          // socket). Leaving the connection open poisons every future
+          // subscribe: frames go into the void and we time out forever.
+          // Kill it and reset handshake state so the next call starts a
+          // fresh WebSocket instead of reusing a dead one.
+          this.subscribed = false;
+          this.handshakeComplete = false;
+          try {
+            this.ws?.terminate();
+          } catch {
+            /* already closed */
+          }
           reject(new WanderlogError("Subscribe timeout", "subscribe_timeout"));
         }
-      }, 10_000);
+      }, 30_000);
     });
 
     if (!ack.data) {

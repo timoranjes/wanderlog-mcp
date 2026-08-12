@@ -19,6 +19,14 @@ import type {
 
 type Envelope<T> = { success?: boolean } & T;
 
+/**
+ * Default per-request timeout. Wanderlog's API can be slow on large trips
+ * (multi-hundred-KB payloads), but an unbounded fetch means a hung upstream
+ * hangs the whole MCP call until the client's outer timeout (120s) kills the
+ * server. Fail fast with a clear error instead.
+ */
+const DEFAULT_TIMEOUT_MS = 45_000;
+
 export class RestClient {
   constructor(private readonly config: Config) {}
 
@@ -37,7 +45,7 @@ export class RestClient {
   private async request<T>(
     method: string,
     path: string,
-    opts: { body?: unknown } = {},
+    opts: { body?: unknown; timeoutMs?: number } = {},
   ): Promise<T> {
     const url = `${this.config.baseUrl}${path}`;
     const init: Parameters<typeof fetch>[1] = {
@@ -48,13 +56,26 @@ export class RestClient {
     };
     if (opts.body !== undefined) init.body = JSON.stringify(opts.body);
 
+    const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    init.signal = controller.signal;
+
     let response: Response;
     try {
       response = await fetch(url, init);
     } catch (err) {
+      const aborted = controller.signal.aborted;
+      if (aborted) {
+        throw new WanderlogNetworkError(
+          `Request to ${method} ${path} timed out after ${timeoutMs}ms`,
+        );
+      }
       throw new WanderlogNetworkError(
         `Request to ${method} ${path} failed: ${(err as Error).message}`,
       );
+    } finally {
+      clearTimeout(timer);
     }
 
     if (response.status === 401 || response.status === 403) {
